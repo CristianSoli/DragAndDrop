@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import FormNuevoTask from './FormNuevoTask';
 import GuardarEnStorage from '../helpers/GuardarEnStorage';
+import Eliminar from './Eliminar';
 
 const Cards = ({task, setTasks, l, e, clases, name, draggingOver, onDrop, getList, startDrag}) => {
 
     //  Hook para abrir ventana de edicion
     const [ showForm, setShowForm ] = useState(false);
+
+    //  Hook para abrir la ventana de eliminar
+    const [idEliminar, setIdEliminar ] = useState();
 
     // Hook para crear nuevo objeto en el arreglo
     const [ carta, setCarta ] = useState({
@@ -16,17 +20,12 @@ const Cards = ({task, setTasks, l, e, clases, name, draggingOver, onDrop, getLis
     const { title, body } = carta; 
 
     useEffect(() => {
-        console.log("Componente de listado de cargar peliculas")
-
         conseguirTasks();
-
     }, []);
 
     const conseguirTasks = () => {
-        let tareas = JSON.parse(localStorage.getItem("tareas"));
-
+        let tareas = JSON.parse(localStorage.getItem("tareas")) || [];
         setTasks(tareas);
-
         return tareas;
     };
 
@@ -37,6 +36,10 @@ const Cards = ({task, setTasks, l, e, clases, name, draggingOver, onDrop, getLis
         let target = e.target;
         let title = target.title.value;
         let body = target.body.value;
+
+        //  Compruebo que la tarea no se cree vacia
+        if (!title || !body)
+            return false;
 
         //  Crear un objeto de la tarea a guardar 
         let task = {
@@ -67,6 +70,14 @@ const Cards = ({task, setTasks, l, e, clases, name, draggingOver, onDrop, getLis
             setShowForm(false);
     };
 
+    const abrirMenu = (e, tareaElemento) => {
+        if (l !== 4)
+            return false;
+
+        e.preventDefault();
+        setIdEliminar(tareaElemento.id);
+    };
+
     return (
         <div className={ clases }>
             <h3>
@@ -76,10 +87,13 @@ const Cards = ({task, setTasks, l, e, clases, name, draggingOver, onDrop, getLis
 
             <div className='dd-zone' droppable="true" onDragOver={(evt => draggingOver(evt))} onDrop={(evt => onDrop(evt,  e ))}>
                 {getList(l).map(item => (
-                    <div className='dd-element' key={item.id} draggable onDragStart={(evt) => startDrag(evt, item)}>
-                        <strong className='title'>{item.title}</strong>
-                        <p className='body'>{item.body}</p>
-                    </div>
+                    (idEliminar != item.id) ?
+                        (<div className='dd-element' key={item.id} draggable onContextMenu={ e => abrirMenu(e, item) } onDragStart={(evt) => startDrag(evt, item)}>
+                            <strong className='title'>{item.title}</strong>
+                            <p className='body'>{item.body}</p>
+                        </div>)
+                    :
+                        <Eliminar setIdEliminar={ setIdEliminar } conseguirTasks={ conseguirTasks } id={ item.id } setTasks={ setTasks } />
                 ))}
 
                 { ( l === 1  ) && ((
